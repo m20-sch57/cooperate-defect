@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/game.css">
+
+    <title>Cooperate-defect</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 class="leaderboard-title" id="leaderboard-title">
+                <span id="progress">Starting...</span>
+            </h2>
+            <h2 class="error-title" id="error-title" style="display: none">
+                Error :(
+            </h2>
+            <button class="link-button action" id="show-error" style="display: none;">
+                Show error
+            </button>
+            <a class="link-button action" id="download" style="display: none;">
+                Download game
+            </a>
+        </div>
+        <div class="leaderboard" id="leaderboard">
+            <div class="leaderboard-header">Player</div>
+            <div class="leaderboard-header">Population</div>
+            <div class="leaderboard-header">Median score</div>
+        </div>
+    </div>
+    <div class="popup-wrapper" id="popup" style="display: none;">
+        <article class="popup-window error-popup">
+            <header class="error-header">
+                <h1 class="error-header-title">Error log</h1>
+                <button class="btn-icon btn-transparent error-close" id="hide-error">
+                    <span>x</span>
+                </button>
+            </header>
+            <main class="scrollable-wrapper">
+                <div class="scrollable custom-scroll error-content" id="error-content"></div>
+            </main>
+        </article>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="/static/js/game.js"></script>
+</body>

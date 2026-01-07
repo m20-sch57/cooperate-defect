@@ -40,7 +40,7 @@
 #endif
 
 #ifndef NUM_ROUNDS
-#define NUM_ROUNDS	10
+#define NUM_ROUNDS	100
 #endif
 
 #ifndef MEMLIMIT
