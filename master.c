@@ -47,6 +47,10 @@
 #define MEMLIMIT	536870912l
 #endif
 
+#ifndef GAMELOG_SIZE
+#define GAMELOG_SIZE	(NUM_ROUNDS*4)
+#endif
+
 #define ARG_LENGTH	7
 #define ARG_N_POS	4
 char *USAGE = "usage: %s <config_log> <machine_log> <human_log> <error_log> <st_1> <st_2>\n";
@@ -62,7 +66,7 @@ void sa_sigchld(int __attribute__((unused)) sig) {
 }
 
 int main(int argc, char **argv) {
-	int N, i, j, k, round_num, buf_size;
+	int N, i, j, k, round_num, buf_size, gamelog_pos;
 	char **in_fifos, **out_fifos;
 	struct pollfd *pfds;
 	struct rlimit *lim_as;
@@ -71,7 +75,7 @@ int main(int argc, char **argv) {
 	struct sigaction *psa;
 	sigset_t sigmask;
 	int *in_fds, *out_fds;
-	char *bufs, buf[BUFSIZE];
+	char *bufs, buf[BUFSIZE], gamelog[GAMELOG_SIZE];
 	int *buf_pos;
 	char *args[2];
 	char *not_alive, *ans;
@@ -85,6 +89,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 	N = 2;
+	gamelog_pos = 0;
 	if (strcmp(*(argv+1), "-") != 0) {
 		k = open(*(argv+1), O_WRONLY | O_CREAT | O_EXCL,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -627,32 +632,27 @@ int main(int argc, char **argv) {
 			}
 		}
 		for (i = 0; i < N; ++i) {
-			fprintf(stdout, "%i-th strategy %s: %c\n", i, answered[i] ?
-			"finished" : "not finished", ans[i]);
+			if (answered[i] == 0) {
+				fprintf(stdout, "%i-th strategy %s: %c\n", i, answered[i] ?
+				"finished" : "not finished", ans[i]);
+			}
 		}
-		j = 0;
-		if (BUFSIZE <= N * 2) {
-			fprintf(stderr, "Too many strategies, ans doesn't fit into buffer, aborting\n");
+		for (i = 0; i < N; ++i) {
+			gamelog[gamelog_pos++] = ans[i];
+			gamelog[gamelog_pos++] = (i == N-1) ? '\n' : ' ';
+		}
+	} /* one round routine finished */
+kill_all:
+	j = 0;
+	do {
+		k = write(MACHINE_LOG, gamelog+j, gamelog_pos-j);
+		if (k < 0) {
+			perror("write");
 			EXIT_CODE = EXIT_FAILURE;
 			goto kill_all;
 		}
-		for (i = 0; i < N; ++i) {
-			buf[j++] = ans[i];
-			buf[j++] = (i == N-1) ? '\n' : ' ';
-		}
-		buf_size = j;
-		j = 0;
-		do {
-			k = write(MACHINE_LOG, buf, buf_size);
-			if (k < 0) {
-				perror("write");
-				EXIT_CODE = EXIT_FAILURE;
-				goto kill_all;
-			}
-			j += k;
-		} while (j < buf_size);
-	} /* one round routine finished */
-kill_all:
+		j += k;
+	} while (j < gamelog_pos);
 	if (MACHINE_LOG != 1) {
 		if (fsync(MACHINE_LOG) < 0) {
 			perror("fsync");
@@ -920,6 +920,7 @@ cleanup:
 	free(pfds);
 	free(tmo_p);
 	free(pfinish);
+	free(pstart);
 	free(pnow);
 	free(psa);
 	free(lim_as);

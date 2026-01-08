@@ -105,7 +105,7 @@ def start_game(game_id, n_tournaments, strat_players, sample_strats, user_strat_
                 scores[j] += score2
         arr = list(zip(scores, players))
         random.shuffle(arr)
-        arr.sort(reverse=True)
+        arr.sort(reverse=True, key=lambda x: x[0])
         cnt = int(round(n * 0.1))
         arr[n - cnt:] = arr[:cnt]
         last_scores, players = zip(*arr)
