@@ -1,6 +1,12 @@
 # cooperate-defect
 Репозиторий для соревнований по [Cooperate-Defect game](https://en.wikipedia.org/wiki/Prisoner%27s_dilemma)
 
+Запускать
+```
+make master && python3 serve.py
+```
+(может потребоваться установить `flask` и `flask_socketio`)
+
 # Ход игры
 Общая иерархия:
 
