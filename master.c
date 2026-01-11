@@ -28,7 +28,7 @@
 #endif
 
 #ifndef TIMEOUT_MSEC
-#define TIMEOUT_MSEC	250
+#define TIMEOUT_MSEC	500
 #endif
 
 #ifndef BUFSIZE
