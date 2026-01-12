@@ -1,7 +1,7 @@
 'use strict'
 
 const strats = [
-    "cooperate.py", "defect.py", "rand.py"
+    "cooperate.py", "copycat.py", "defect.py", "rand.py"
 ];
 
 const maxStrats = 12;
