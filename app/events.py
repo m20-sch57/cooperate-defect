@@ -10,4 +10,4 @@ def join(game_id):
         return
     with lock:
         join_room(game_id)
-        emit('results', socketio_obj(*games[game_id]), room=request.sid)
+        emit('results', socketio_obj(*games[game_id]), to=request.sid)

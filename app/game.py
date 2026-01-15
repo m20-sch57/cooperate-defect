@@ -38,6 +38,43 @@ def prepare_strats(strats_dir, sample_strats, user_strat_names, user_strat_conte
     return all_strats
 
 
+cpp_file_extensions = ['cpp', 'cc', 'cxx']
+c_file_extensions = ['c']
+
+
+def get_extension(filename: str):
+    return None if '.' not in filename else filename[filename.rfind('.') + 1:]
+
+
+def compile_strats(strats_dir, strats):
+    error_path = os.path.join(strats_dir, 'error')
+    strats_new = []
+    with open(error_path, 'w') as ferr:
+        for strat_name in strats:
+            ext = get_extension(strat_name)
+            proc = None
+            strat_new = None
+            if ext in cpp_file_extensions:
+                strat_new = strat_name[:-len(ext) - 1]
+                proc = subprocess.Popen(['g++', strat_name, '-o', strat_new, '-Wall', '-Werror'], 
+                                        stderr=ferr,
+                                        cwd=strats_dir)
+            elif ext in c_file_extensions:
+                strat_new = strat_name[:-len(ext) - 1]
+                proc = subprocess.Popen(['gcc', strat_name, '-o', strat_new, '-Wall', '-Werror'],
+                                        stderr=ferr,
+                                        cwd=strats_dir)
+            if proc is not None:
+                status = proc.wait()
+                if status != 0:
+                    return None
+                strats_new.append(strat_new)
+            else:
+                strats_new.append(strat_name)
+    os.remove(error_path)
+    return strats_new
+
+
 def play_match(match_dir, strats_dir, strat1, strat2):
     os.makedirs(match_dir)
     strat1_full = os.path.join(os.getcwd(), strats_dir, strat1)
@@ -60,12 +97,24 @@ def get_error(match_dir):
         return ''
 
 
+def get_compilation_error(strats_dir):
+    try:
+        return open(os.path.join(strats_dir, 'error')).read()
+    except FileNotFoundError:
+        return ''
+
+
 def start_game(game_id, n_tournaments, strat_players, sample_strats, user_strat_names, user_strat_contents):
     strats_dir = get_strats_dir(game_id)
     results_dir = get_results_dir(game_id)
     os.makedirs(strats_dir)
     os.makedirs(results_dir)
     strats = prepare_strats(strats_dir, sample_strats, user_strat_names, user_strat_contents)
+    strats = compile_strats(strats_dir, strats)
+    if strats is None:
+        games[game_id][-1].error = get_compilation_error(strats_dir)
+        socketio.emit('results', socketio_obj(*games[game_id]), to=game_id)
+        return
     players = sum([[strat] * strat_players for strat in strats], [])
     last_scores = [0] * len(players)
     for tournament_id in range(n_tournaments):
@@ -82,21 +131,21 @@ def start_game(game_id, n_tournaments, strat_players, sample_strats, user_strat_
         for match_id, (i, j) in enumerate(pairs):
             with lock:
                 games[game_id] = (tournament_id, n_tournaments, match_id, n_matches, Results(players, last_scores))
-                socketio.emit('results', socketio_obj(*games[game_id]), room=game_id)
+                socketio.emit('results', socketio_obj(*games[game_id]), to=game_id)
             match_dir = get_match_dir(game_id, tournament_id, n_tournaments, match_id, n_matches)
             strat1, strat2 = players[i], players[j]
             success = play_match(match_dir, strats_dir, strat1, strat2)
             if not success:
                 with lock:
                     games[game_id][-1].error = get_error(match_dir)
-                    socketio.emit('results', socketio_obj(*games[game_id]), room=game_id)
+                    socketio.emit('results', socketio_obj(*games[game_id]), to=game_id)
                 return
             with open(os.path.join(match_dir, 'match.log')) as fin:
                 lines = fin.readlines()
             if not lines:
                 with lock:
                     games[game_id][-1].error = get_error(match_dir)
-                    socketio.emit('results', socketio_obj(*games[game_id]), room=game_id)
+                    socketio.emit('results', socketio_obj(*games[game_id]), to=game_id)
                 return
             for line in lines:
                 turn1, turn2 = line.split()
@@ -113,6 +162,6 @@ def start_game(game_id, n_tournaments, strat_players, sample_strats, user_strat_
             break
     with lock:
         games[game_id] = (n_tournaments, n_tournaments, 0, 0, Results(players, last_scores))
-        socketio.emit('results', socketio_obj(*games[game_id]), room=game_id)
+        socketio.emit('results', socketio_obj(*games[game_id]), to=game_id)
     with open(os.path.join(results_dir, 'results.txt'), 'w') as fout:
         fout.write(str(games[game_id][-1]))
