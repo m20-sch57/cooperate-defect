@@ -44,7 +44,7 @@
 #endif
 
 #ifndef MEMLIMIT
-#define MEMLIMIT	536870912l
+#define MEMLIMIT	4294967296l
 #endif
 
 #ifndef GAMELOG_SIZE

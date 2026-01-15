@@ -40,6 +40,7 @@ def prepare_strats(strats_dir, sample_strats, user_strat_names, user_strat_conte
 
 cpp_file_extensions = ['cpp', 'cc', 'cxx']
 c_file_extensions = ['c']
+kotlin_file_extensions = ['kt']
 
 
 def get_extension(filename: str):
@@ -64,6 +65,17 @@ def compile_strats(strats_dir, strats):
                 proc = subprocess.Popen(['gcc', strat_name, '-o', strat_new, '-Wall', '-Werror'],
                                         stderr=ferr,
                                         cwd=strats_dir)
+            elif ext in kotlin_file_extensions:
+                strat_new = strat_name[:-len(ext) - 1]
+                strat_jar = strat_new + '.jar'
+                proc = subprocess.Popen(['kotlinc', strat_name, '-d', strat_jar, '-include-runtime'],
+                                        stderr=ferr,
+                                        cwd=strats_dir)
+                strat_new_path = os.path.join(strats_dir, strat_new)
+                strat_jar_path = os.path.join(strats_dir, strat_jar)
+                with open(strat_new_path, 'w') as strat_file:
+                    print(f'#!/bin/bash\njava -jar {os.path.abspath(strat_jar_path)}', file=strat_file)
+                os.chmod(strat_new_path, 0o755)
             if proc is not None:
                 status = proc.wait()
                 if status != 0:

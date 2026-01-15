@@ -52,10 +52,17 @@ socket.on("results", (message) => {
     let numTournaments = message.n_tournaments;
     let matchId = message.match_id;
     let numMatches = message.n_matches;
+    let error = message.results.error;
+    if (tournamentId == -1) {
+        document.getElementById("progress").innerHTML = "Compiling strategies...";
+        if (error != null) {
+            finalize(error);
+        }
+        return;
+    }
     showLeaderboard(message.results.strats, message.results.populations, message.results.scores, tournamentId == numTournaments);
     //let percentage = Math.round(100.0 * tournamentId / numTournaments);
     document.getElementById("progress").innerHTML = `Tournament ${tournamentId} / ${numTournaments}, match ${matchId} / ${numMatches}`;
-    let error = message.results.error;
     if (error != null || tournamentId == numTournaments) {
         finalize(error);
     }

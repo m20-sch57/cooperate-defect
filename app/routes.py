@@ -37,7 +37,7 @@ def submit():
         abort(400)
     game_id = str(uuid.uuid4())
     with lock:
-        games[game_id] = (0, n_tournaments, 0, 0, Results([], []))
+        games[game_id] = (-1, -1, -1, -1, Results([], []))
     user_strat_names = [strat_file.filename for strat_file in strat_files]
     user_strat_contents = [strat_file.read() for strat_file in strat_files]
     thread = socketio.start_background_task(start_game, game_id, n_tournaments, strat_players, 
